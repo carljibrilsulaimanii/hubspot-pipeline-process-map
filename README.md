@@ -102,11 +102,13 @@ About 2 minutes.
 
 **1a.** Download [`process-map.html`](process-map.html) and open it in a browser (double-click it).
 
-**1b.** Click **How the objects connect**, then **Program pipeline flow**. Click a few boxes and check that the panel on the right changes each time.
+**1b.** Click through the seven example tabs: **How the objects connect**, **Program pipeline flow**, **Ticket sales flow**, **Enrollment pipeline flow**, **Phone system connections**, **AI text agent** and **Sales replies**. Click a few boxes on each and check that the panel on the right changes each time.
+
+The first two are a small starter example. The other five show the layouts of a full sales setup (a payment-driven pipeline, a call-driven pipeline, a phone and text system, an AI text agent, and reply handling) with made-up content. Keep the tabs you need and delete the rest.
 
 **1c.** Click **Rep moves the stage** on the second tab. The panel shows a "How it was meant to work" note, a "Watch out" note and related-box buttons. Click **Won** under Related boxes: the map highlights that box and its arrows.
 
-✅ **Check:** both tabs draw their boxes and arrows, and every box opens a panel.
+✅ **Check:** every tab draws its boxes and arrows, and every box opens a panel.
 
 ### Step 2. Collect the facts from HubSpot
 
@@ -117,6 +119,7 @@ Collect these before you edit anything. Write them in a plain document first; yo
 | Collect | Where in HubSpot | Goes into |
 |---|---|---|
 | Portal (account) id | The number after `/contacts/` in any record URL | `PORTAL_ID` |
+| Each pipeline's id | **Settings** → **Objects** → **Deals** → **Pipelines**, open the pipeline: the id is the last part of the URL, after `/object/0-3/` | `PIPE(...)` links |
 | Each pipeline's stages, in order, with each stage's win probability | **Settings** → **Objects** → **Deals** → **Pipelines** (wording may differ) | One box per stage, `stats` |
 | Deals per stage, and the amount per stage | The deals board totals, or a report grouped by deal stage | `sub` and `stats` |
 | Every workflow that creates, moves or stamps a record on the map | **Automation** → **Workflows**. Open each one | `WF` |
@@ -235,7 +238,21 @@ The arguments are, in order: map key, box id, `x`, `y`, width, title, subtitle, 
 
 ⚠️ **Trap:** answers and step text are inserted as HTML, so a bare `<` in them breaks the panel. Write "less than" or `&lt;`. Titles, subtitles, stats and field tables are escaped for you.
 
-✅ **Check:** every box has `q` and `a`, and every `wf` key you used exists in `WF`.
+**6f.** Give every object and pipeline box links to view and edit it in HubSpot. Add them to `links` with the helpers at the top of the data block:
+
+| To open | Helper | Link it builds |
+|---|---|---|
+| A record list (contacts, appointments, any custom object) | `LIST("0-421")` | `https://app.hubspot.com/contacts/<portal>/objects/<type>/views/all/list` |
+| The deals board | `BOARD` | `https://app.hubspot.com/contacts/<portal>/objects/0-3/views/all/board` |
+| One pipeline's settings and stages | `PIPE("0-3","<pipeline id>")` | `https://app.hubspot.com/pipelines-settings/<portal>/object/<type>/<pipeline id>` |
+| An object's settings (pipelines, associations, record layout) | `OBJSET("0-3")` | `https://app.hubspot.com/object-type-settings/<portal>/object/<type>` |
+| An object's properties | `PROPS("0-3")` | `https://app.hubspot.com/property-settings/<portal>/properties?type=<type>` |
+
+Object type ids: `0-1` contacts, `0-3` deals, `0-421` appointments. Custom objects start with `2-`; the id is in the object's list URL.
+
+⚠️ **Trap:** the deals board ignores any pipeline in its link and opens on the pipeline the viewer last picked. Label board links "pick the pipeline in the pipeline menu", and use `PIPE(...)` when you need one exact pipeline.
+
+✅ **Check:** every box has `q` and `a`, every `wf` key you used exists in `WF`, and every object and pipeline box has a view and an edit link.
 
 ### Step 7. Draw the arrows
 
@@ -284,7 +301,7 @@ It checks that:
 Success looks like:
 
 ```
-PASS 175 checks: 2 maps, 12 boxes, 3 workflows
+PASS 1066 checks: 7 maps, 68 boxes, 14 workflows
 ```
 
 A failure lists each problem in plain words, for example `Box id "won" is used more than once; the earlier box disappears`.
@@ -362,7 +379,7 @@ The file is self-contained. It loads two web fonts from Google Fonts and falls b
 
 The tone names are just colour names. Use them for whatever groups make sense on your map, and say what each one means in the map's `legend`.
 
-**Helpers** you can use inside the data: `WFURL(id)` builds a workflow link, `DEAL(id)` builds a deal record link.
+**Helpers** you can use inside the data: `WFURL(id)` builds a workflow link, `DEAL(id)` a deal record link, and `LIST`, `BOARD`, `PIPE`, `OBJSET` and `PROPS` the view and edit links in [Step 6f](#step-6-fill-in-the-boxes).
 
 ## Lessons from production
 
