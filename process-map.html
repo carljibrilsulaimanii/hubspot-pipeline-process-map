@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<title>Pipeline Process Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--
+  Author:  Jibril Sulaiman
+  Created: 2026-10-19
+  Deploy:  Any static host, or open the file in a browser. One self-contained file.
+  What:    A clickable map of a HubSpot sales setup: the objects, each deal pipeline and the
+           workflows behind every stage. Clicking a box shows the question it answers, the
+           answer, how it was meant to work, and the workflow steps with links.
+  Why:     HubSpot shows pipelines as boards and workflows one at a time. Nothing shows how
+           stages, objects and workflows connect, so stages nobody moves deals into, and
+           workflows that race each other, go unnoticed.
+  Edit:    Only the MAP DATA block in the script (and one tab button per map). Run npm test
+           after every edit.
+-->
+<style>html,body{margin:0}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: header with pipeline totals, three map tabs, then map (left) beside a sticky answer panel (right); stacks on phones. */
+:root{
+  --bg:#F3F5F7; --panel:#FFFFFF; --ink:#16202A; --muted:#566371; --faint:#8592A0; --line:#D6DDE4;
+  --ticket:#0C7666; --ticket-soft:#DCF1EC; --enroll:#5646C2; --enroll-soft:#E8E5FB;
+  --manual:#B0442A; --manual-soft:#FBE6DE; --alo:#8F5400; --alo-soft:#FCEFD9; --node:#FFFFFF; --node-ink:#16202A;
+  --accent:#2152C4; --warn-soft:#FFF3D6; --warn-ink:#7A5200; --gap-ink:#A3312A;
+  --display:"Instrument Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --body:"Instrument Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1317; --panel:#151C22; --ink:#E5EBF0; --muted:#9BA8B4; --faint:#6E7B87; --line:#28323B;
+  --ticket:#52C6B2; --ticket-soft:#12302B; --enroll:#A99DFF; --enroll-soft:#221E42;
+  --manual:#F08D6B; --manual-soft:#3A1E15; --alo:#F2B45A; --alo-soft:#33250F; --node:#1B232A; --node-ink:#E5EBF0;
+  --accent:#86A9FF; --warn-soft:#33280E; --warn-ink:#F1C66C; --gap-ink:#FF8F86; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1317; --panel:#151C22; --ink:#E5EBF0; --muted:#9BA8B4; --faint:#6E7B87; --line:#28323B;
+  --ticket:#52C6B2; --ticket-soft:#12302B; --enroll:#A99DFF; --enroll-soft:#221E42;
+  --manual:#F08D6B; --manual-soft:#3A1E15; --alo:#F2B45A; --alo-soft:#33250F; --node:#1B232A; --node-ink:#E5EBF0;
+  --accent:#86A9FF; --warn-soft:#33280E; --warn-ink:#F1C66C; --gap-ink:#FF8F86; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+a{color:var(--accent);text-underline-offset:2px;overflow-wrap:anywhere}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-direction:column;gap:10px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(26px,4vw,34px);line-height:1.15;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.lede{margin:0;color:var(--muted);max-width:70ch}
+.totals{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.total{display:flex;flex-direction:column;gap:2px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);min-width:0}
+.total b{font-size:18px;font-variant-numeric:tabular-nums;font-weight:600}
+.total span{font-size:12px;color:var(--muted)}
+.total.t{border-left:4px solid var(--ticket);border-radius:0 10px 10px 0}
+.total.e{border-left:4px solid var(--enroll);border-radius:0 10px 10px 0}
+nav.tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+nav.tabs button{font:inherit;font-weight:600;background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:10px 12px;cursor:pointer;margin-bottom:-1px}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.stage{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start}
+.mapcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.maphead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.maphead h2{font-family:var(--display);font-size:18px;margin:0;font-weight:600}
+.maphead p{margin:0;color:var(--muted);font-size:13px}
+.svgbox{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.svgbox svg{display:block;width:100%;min-width:600px;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;border:1.5px solid}
+.lg-ticket{background:var(--ticket-soft);border-color:var(--ticket)}
+.lg-enroll{background:var(--enroll-soft);border-color:var(--enroll)}
+.lg-ghost{background:var(--panel);border-color:var(--faint);border-style:dashed}
+.lg-alo{background:var(--alo-soft);border-color:var(--alo)}
+.lg-manual{background:var(--manual-soft);border-color:var(--manual);border-style:dashed}
+.lg-neutral{background:var(--node);border-color:var(--faint)}
+/* svg */
+.n rect{stroke-width:1.2;transition:stroke-width .15s}
+.n{cursor:pointer;outline:none}
+.n .tt{font:600 13.5px var(--display);fill:var(--node-ink)}
+.n .ss{font:400 12px var(--body);fill:var(--muted)}
+.n.neutral rect{fill:var(--node);stroke:var(--faint)}
+.n.ticket rect{fill:var(--ticket-soft);stroke:var(--ticket)}
+.n.enroll rect{fill:var(--enroll-soft);stroke:var(--enroll)}
+.n.alo rect{fill:var(--alo-soft);stroke:var(--alo)}
+.n.manual rect{fill:var(--manual-soft);stroke:var(--manual);stroke-dasharray:5 4}
+.n.ghost rect{fill:var(--panel);stroke:var(--faint);stroke-dasharray:5 4}
+.n:hover rect{stroke-width:2}
+.n:focus-visible rect{stroke:var(--accent);stroke-width:2.5}
+.n.sel rect{stroke:var(--accent);stroke-width:3}
+.n.sel .tt{fill:var(--accent)}
+.e{fill:none;stroke:var(--faint);stroke-width:1.4}
+.e.dash{stroke-dasharray:4 3}
+.e.hot{stroke:var(--accent);stroke-width:2.2}
+.ahead{fill:none;stroke:context-stroke;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+/* panel */
+aside.panel{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0;max-height:calc(100vh - 24px);overflow:auto}
+.kick{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{font-family:var(--mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.pill.ticket{background:var(--ticket-soft);color:var(--ticket);border-color:transparent}
+.pill.enroll{background:var(--enroll-soft);color:var(--enroll);border-color:transparent}
+.pill.alo{background:var(--alo-soft);color:var(--alo);border-color:transparent}
+.pill.manual{background:var(--manual-soft);color:var(--manual);border-color:transparent}
+aside h3{font-family:var(--display);font-size:20px;line-height:1.25;margin:0;font-weight:600;text-wrap:balance}
+.ans{display:flex;flex-direction:column;gap:10px}
+.ans p{margin:0;max-width:65ch}
+.stats{display:flex;flex-wrap:wrap;gap:8px}
+.stat{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;min-width:0}
+.stat b{font-variant-numeric:tabular-nums;font-size:16px;font-weight:600}
+.stat span{font-size:12px;color:var(--muted)}
+.fields{width:100%;border-collapse:collapse;font-size:13px}
+.fields td{border-top:1px solid var(--line);padding:6px 8px 6px 0;vertical-align:top}
+.fields td:first-child{font-weight:600;white-space:nowrap;padding-right:12px}
+.fields td:last-child{color:var(--muted)}
+.wf{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.wf + .wf{margin-top:0}
+.wfh{display:flex;flex-direction:column;gap:3px}
+.wfh .lab{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.wfh .nm{font-weight:600}
+.wfh .meta{font-size:12.5px;color:var(--muted)}
+ol.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+ol.steps li{position:relative;padding:0 0 12px 28px;font-size:13.5px}
+ol.steps li:last-child{padding-bottom:0}
+ol.steps li::before{content:"";position:absolute;left:8px;top:16px;bottom:-2px;border-left:1.5px solid var(--line)}
+ol.steps li:last-child::before{display:none}
+ol.steps li .mk{position:absolute;left:2px;top:4px;width:14px;height:14px;border-radius:50%;border:2px solid var(--faint);background:var(--panel)}
+ol.steps li.branch .mk{border-radius:2px;transform:rotate(45deg) scale(.85);border-color:var(--accent)}
+ol.steps li.wait .mk{border-style:dotted}
+ol.steps li.deal .mk{background:var(--accent);border-color:var(--accent)}
+ol.steps li.manual .mk{border-style:dashed;border-color:var(--manual)}
+ol.steps li.gap .mk{border-color:var(--gap-ink);background:var(--manual-soft)}
+ol.steps li.gap{color:var(--gap-ink)}
+ol.steps li small{display:block;color:var(--muted);font-size:12.5px}
+.stepkey{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:var(--muted)}
+.stepkey span{display:inline-flex;align-items:center;gap:5px}
+.stepkey i{width:10px;height:10px;border-radius:50%;border:2px solid var(--faint);display:inline-block}
+.stepkey i.b{border-radius:1px;transform:rotate(45deg) scale(.85);border-color:var(--accent)}
+.stepkey i.d{background:var(--accent);border-color:var(--accent)}
+.stepkey i.m{border-style:dashed;border-color:var(--manual)}
+.intent{border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:0 10px 10px 0;padding:12px 14px;font-size:13.5px;display:flex;flex-direction:column;gap:4px}
+.intent b{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.intent small{color:var(--muted);font-size:12px}
+.watch{background:var(--warn-soft);color:var(--warn-ink);border-radius:10px;padding:12px 14px;font-size:13.5px}
+.watch b{display:block;margin-bottom:2px}
+.links{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.links .lab{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+code,.mono{font-family:var(--mono);font-size:.88em}
+.next{display:flex;flex-wrap:wrap;gap:6px}
+.next button{font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:4px 10px;cursor:pointer}
+.next button:hover{border-color:var(--accent);color:var(--accent)}
+.next button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.ref{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px}
+section.ref h2{font-family:var(--display);font-size:18px;margin:0;font-weight:600}
+.tablewrap{overflow-x:auto}
+table.wfl{border-collapse:collapse;width:100%;font-size:13px;min-width:640px}
+table.wfl th{text-align:left;font-weight:600;color:var(--muted);font-size:12px;padding:6px 10px 6px 0;border-bottom:1px solid var(--line)}
+table.wfl td{padding:7px 10px 7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.foot{font-size:12.5px;color:var(--muted)}
+@media (max-width:900px){.stage{grid-template-columns:minmax(0,1fr)}aside.panel{position:static;max-height:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">HubSpot portal 12345678 · example data</div>
+    <h1>Pipeline process map</h1>
+    <p class="lede">Workflows create and move the deals in this example: a payment opens a deal, and so does a booked call. Click any box to see what it does and the workflow steps behind it.</p>
+    <div class="totals">
+      <div class="total e"><b>120 deals</b><span>Program pipeline (example)</span></div>
+      <div class="total"><b>3 workflows</b><span>Create and move the deals</span></div>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Maps">
+    <button role="tab" id="tab-objects" aria-controls="stage" aria-selected="true" data-map="objects">How the objects connect</button>
+    <button role="tab" id="tab-pipeline" aria-controls="stage" aria-selected="false" data-map="pipeline">Program pipeline flow</button>
+  </nav>
+
+  <div class="stage" id="stage" role="tabpanel">
+    <div class="mapcard">
+      <div class="maphead"><h2 id="maptitle"></h2><p id="mapnote"></p></div>
+      <div class="svgbox" id="svgbox"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+
+  <section class="ref">
+    <h2>Workflows on this map</h2>
+    <p class="foot">Every link opens the workflow in HubSpot. "Runs on" is the record type the workflow enrolls.</p>
+    <div class="tablewrap"><table class="wfl" id="wftable"><thead><tr><th>Workflow</th><th>Runs on</th><th>Starts when</th><th>Link</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="ref">
+    <h2>Where the design notes come from</h2>
+    <p class="foot">List the meetings, chats and documents behind each "How it was meant to work" note, so a reader can check them.</p>
+    <p class="foot">Counts in this example are made up.</p>
+  </section>
+</div>
+
+<script>
+/* ==========================================================================
+   MAP DATA - edit everything between this line and "MAP DATA END".
+   The rendering code below it does not need changes.
+   ========================================================================== */
+
+/* Your HubSpot portal (account) id: the number after /contacts/ in any record URL. */
+const PORTAL_ID = "12345678";
+
+/* ---------- Workflow registry (ids are the number in each workflow's editor URL) ---------- */
+const WFURL = id => `https://app.hubspot.com/workflows/${PORTAL_ID}/platform/flow/${id}/edit`;
+const DEAL = id => `https://app.hubspot.com/contacts/${PORTAL_ID}/record/0-3/${id}`;
+const WF = {
+  payment:{id:"1000000001",name:"Payment - Create Program Deal",on:"Payment",start:"A payment succeeds"},
+  booking:{id:"1000000002",name:"Booked Call - Create or Move Deal",on:"Contact",start:"A sales call is booked through the meetings link"},
+  stage:{id:"1000000003",name:"Deal Stage - Stamp Dates and Lifecycle",on:"Deal",start:"Deal stage changes"}
+};
+const wfLink = k => `<a href="${WFURL(WF[k].id)}">${WFURL(WF[k].id)}</a>`;
+
+/* ---------- Maps: one per tab. Each also needs a <button data-map="key"> in the tabs nav. ---------- */
+const MAPS = {
+ objects:{title:"How the objects connect",note:"Everything links through the contact.",h:330,start:"contact",
+  legend:[["lg-ticket","Records made from payments"],["lg-enroll","Records made from booked calls"],["lg-neutral","Source or shared record"]],
+  edges:[["pay","contact","M175 86 L175 112 L300 112 L300 138"],["meet","contact","M505 86 L505 112 L380 112 L380 138"],
+   ["contact","deal","M300 196 L300 222 L175 222 L175 248"],["contact","appt","M380 196 L380 222 L505 222 L505 248"]]},
+ pipeline:{title:"Program pipeline flow",note:"Workflows create deals; a rep moves them after the call.",h:430,start:"called",
+  legend:[["lg-neutral","Trigger or workflow step"],["lg-enroll","Stage a workflow sets"],["lg-manual","Stage only a rep can set"]],
+  edges:[["booked","s1","M175 86 L175 138"],["paid","s2","M505 86 L505 138"],["s1","called","M175 196 L175 238"],
+   ["called","won","M175 296 L175 322 L340 322 L340 348"],["called","lost","M175 296 L175 348"],["s2","won","M505 196 L505 378 L432 378"]]}
+};
+
+/* ---------- Nodes: add(map, id, x, y, width, title, subtitle, tone, details) ----------
+   Ids must be unique across ALL maps: a repeated id silently replaces the earlier box
+   (npm test catches it). Boxes are 56 px tall on a 680 px wide canvas. */
+const N = {};
+const add = (map,id,x,y,w,title,sub,tone,o) => { N[id] = Object.assign({map,id,x,y,w,h:56,title,sub,tone},o); };
+
+/* Objects map */
+add("objects","pay",30,30,290,"Payment","Your payment processor","neutral",{kind:"Source",
+ q:"How does a payment reach the CRM?",
+ a:["Each successful payment is copied into HubSpot as a payment record. A workflow on that record creates the deal, so no one types sales in by hand."],
+ stats:[["~15%","Example: payment rows that never completed"]],
+ watch:"Count only completed payments. Failed and abandoned attempts often sit in the same object with an amount filled in.",
+ next:["contact","paid"]});
+
+add("objects","meet",360,30,290,"Meetings link","Round-robin booking page","neutral",{kind:"Source",
+ q:"Which booking links feed the pipeline?",
+ a:["Any booking made through the team's round-robin meetings link. The link's meeting type is what tells the workflow this is a sales call."],
+ links:[["Example booking page","https://meetings.example.com/your-team/sales-call"]],
+ next:["contact","booked"]});
+
+add("objects","contact",200,140,280,"Contact","Buyer or prospect","neutral",{kind:"Object",
+ q:"What lives on the contact?",
+ a:["The contact is the hub. Payments, appointments and deals all link to it, and the workflows keep a few summary fields on it."],
+ fields:[["Lead status","New, In progress, Offer made, Won, Lost"],["Last call outcome","Scheduled, Completed, No show, Canceled"],["Sale source","Rep sale or self-serve, decides the deal owner"]],
+ next:["deal","appt"]});
+
+add("objects","deal",30,250,290,"Deal: Program pipeline","Example: 120 deals","enroll",{kind:"Deal pipeline",
+ q:"What is the program pipeline?",
+ a:["One deal per buyer or booked prospect. The stages track the sales conversation, not the payment."],
+ stats:[["40","Call booked"],["25","Call completed"],["30","Won"],["25","Lost"]],
+ watch:"If HubSpot's win chance on a stage doesn't match reality, any weighted forecast is wrong. Check each stage's probability.",
+ next:["s1","called"]});
+
+add("objects","appt",360,250,290,"Appointment","One record per booked call","enroll",{kind:"Object",
+ q:"What does the appointment record track?",
+ a:["The call itself: when it is, who hosts it, and whether it happened. Its own stages (Scheduled, Completed, No show, Canceled) are where call results show up."],
+ flows:[{label:"Process",name:"Recording a call result",meta:"Done in the meeting record",steps:[["manual","Rep sets the meeting outcome"],["deal","The appointment moves to Completed, No show or Canceled"],["gap","The deal stage does not move by itself"]]}],
+ next:["called"]});
+
+/* Pipeline map */
+add("pipeline","booked",30,30,290,"Call booked","Meetings link","neutral",{kind:"Trigger",
+ q:"How does a booked call create a deal?",
+ a:["Booking the call starts a workflow. It moves the prospect's open deal to Call Booked, or creates one with a default amount, and sets the deal owner to the call's host."],
+ flows:[{wf:"booking",steps:[["branch","Meeting type is a sales call?"],["branch","Open deal already exists?"],["deal","Yes: move it to Call Booked"],["deal","No: create it in Call Booked with the default amount"],["step","Set the owner to the call's host"]]}],
+ intent:{t:"Every booked call should have exactly one open deal, owned by the rep taking the call.",src:"Example design meeting"},
+ next:["s1"]});
+
+add("pipeline","paid",360,30,290,"Payment received","Paid in full online","neutral",{kind:"Trigger",
+ q:"What happens when someone pays without a call?",
+ a:["The payment workflow creates a deal straight in Won with the amount paid. It checks for an open deal first so a buyer who also booked a call doesn't get two."],
+ flows:[{wf:"payment",steps:[["branch","Payment status is completed?"],["branch","Open deal for this contact?"],["deal","Yes: move it to Won and set the amount"],["deal","No: create a deal in Won"]]}],
+ watch:"Two payments a second apart (a purchase plus an add-on) can each miss the other's deal and create two deals. Count buyers, not deals.",
+ next:["s2","won"]});
+
+add("pipeline","s1",30,140,290,"Call Booked","Example: 40 deals","enroll",{kind:"Deal stage",
+ q:"What happens when a deal enters Call Booked?",
+ a:["The stage workflow stamps the call date and sets lead status. The deal then waits for the rep."],
+ flows:[{wf:"stage",label:"On entering this stage",steps:[["step","Copy the call time into Call date"],["step","Set lead status = Call booked"]]}],
+ next:["called"]});
+
+add("pipeline","s2",360,140,290,"Paid online","Skips the call stages","enroll",{kind:"Deal stage",
+ q:"Why do some deals skip the call stages?",
+ a:["Self-serve buyers never book a call. Their deals start at Won, so they never appear in call-completion reports."],
+ next:["won"]});
+
+add("pipeline","called",30,240,290,"Rep moves the stage","After the call","manual",{kind:"Manual step",
+ q:"Who moves a deal after the call?",
+ a:["The rep, by hand. The call outcome is recorded on the appointment, but no workflow changes the deal stage, so a rep who skips this step leaves the deal in Call Booked forever."],
+ intent:{t:"Moving the stage was meant to be the rep's way of logging the call result.",src:"Example design meeting"},
+ watch:"Compare completed appointments with deals still in Call Booked. A big gap means reps aren't moving deals.",
+ next:["won","lost"]});
+
+add("pipeline","won",250,350,180,"Won","Customer","enroll",{kind:"Deal stage",
+ q:"What happens when a deal is won?",
+ a:["The stage workflow sets lifecycle stage to Customer and stamps the close date."],
+ flows:[{wf:"stage",label:"On entering Won",steps:[["step","Set lifecycle stage = Customer"],["step","Stamp the close date"]]}],
+ links:[["Example deal",DEAL("100000000001")]],
+ next:["lost"]});
+
+add("pipeline","lost",30,350,190,"Lost","With a reason","manual",{kind:"Deal stage",
+ q:"What happens when a deal is lost?",
+ a:["The rep picks a lost reason. The workflow sets lead status to Lost."],
+ fields:[["Lost reasons","Price, Timing, Not a fit, No response"]],
+ next:["called"]});
+
+/* MAP DATA END */
+
+
+/* ---------- Rendering ---------- */
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+let current = Object.keys(MAPS)[0];
+const selected = {};
+
+function drawMap(key){
+  const m = MAPS[key];
+  const nodes = Object.values(N).filter(n=>n.map===key);
+  let s = `<svg viewBox="0 0 680 ${m.h}" role="img" aria-labelledby="svgt"><title id="svgt">${esc(m.title)}</title>
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="ahead" d="M2 1L8 5L2 9"/></marker></defs>`;
+  m.edges.forEach(([a,b,d,dash],i)=>{ s += `<path class="e${dash?" dash":""}" data-a="${a}" data-b="${b}" d="${d}" marker-end="url(#ar)"/>`; });
+  nodes.forEach(n=>{
+    const cx = n.x + n.w/2;
+    s += `<g class="n ${n.tone}" data-id="${n.id}" tabindex="0" role="button" aria-label="${esc(n.title)}: ${esc(n.q)}">
+      <rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="8"/>
+      <text class="tt" x="${cx}" y="${n.y+20}" text-anchor="middle" dominant-baseline="central">${esc(n.title)}</text>
+      <text class="ss" x="${cx}" y="${n.y+39}" text-anchor="middle" dominant-baseline="central">${esc(n.sub)}</text></g>`;
+  });
+  s += `</svg>`;
+  document.getElementById("svgbox").innerHTML = s;
+  document.getElementById("maptitle").textContent = m.title;
+  document.getElementById("mapnote").textContent = m.note;
+  document.getElementById("legend").innerHTML = m.legend.map(([c,t])=>`<span><i class="${c}"></i>${esc(t)}</span>`).join("");
+  document.querySelectorAll("#svgbox .n").forEach(g=>{
+    g.addEventListener("click",()=>select(g.dataset.id,true));
+    g.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); select(g.dataset.id,true); }});
+  });
+}
+
+function stepsHTML(steps){
+  return `<ol class="steps">${steps.map(([t,txt,note])=>`<li class="${t}"><span class="mk" aria-hidden="true"></span>${txt}${note?`<small>${note}</small>`:""}</li>`).join("")}</ol>`;
+}
+function flowHTML(f){
+  let head;
+  if(f.wf){ const w = WF[f.wf];
+    head = `<div class="wfh"><span class="lab">${esc(f.label||"Workflow")}</span><span class="nm">${esc(w.name)}</span>
+      <span class="meta">Runs on ${esc(w.on)} · starts when ${esc(w.start.charAt(0).toLowerCase()+w.start.slice(1))}</span>
+      <a href="${WFURL(w.id)}">${WFURL(w.id)}</a></div>`;
+  } else {
+    head = `<div class="wfh"><span class="lab">${esc(f.label||"Process")}</span><span class="nm">${esc(f.name)}</span>${f.meta?`<span class="meta">${esc(f.meta)}</span>`:""}</div>`;
+  }
+  return `<div class="wf">${head}${stepsHTML(f.steps)}</div>`;
+}
+
+function select(id, user){
+  const n = N[id]; if(!n) return;
+  if(n.map!==current){ switchMap(n.map,false); }
+  selected[current] = id;
+  document.querySelectorAll("#svgbox .n").forEach(g=>g.classList.toggle("sel",g.dataset.id===id));
+  document.querySelectorAll("#svgbox .e").forEach(p=>p.classList.toggle("hot",p.dataset.a===id||p.dataset.b===id));
+  const toneClass = n.tone==="neutral"?"":n.tone;
+  let h = `<div class="kick"><span class="pill ${toneClass}">${esc(n.kind)}</span><span class="pill">${esc(n.title)}</span></div>
+    <h3>${esc(n.q)}</h3><div class="ans">${n.a.map(p=>`<p>${p}</p>`).join("")}</div>`;
+  if(n.stats) h += `<div class="stats">${n.stats.map(([v,l])=>`<div class="stat"><b>${esc(v)}</b><span>${esc(l)}</span></div>`).join("")}</div>`;
+  if(n.fields) h += `<table class="fields"><tbody>${n.fields.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}</tbody></table>`;
+  if(n.intent) h += `<div class="intent"><b>How it was meant to work</b><span>${esc(n.intent.t)}</span><small>From: ${esc(n.intent.src)}</small></div>`;
+  if(n.watch) h += `<div class="watch"><b>Watch out</b>${n.watch}</div>`;
+  if(n.flows){
+    h += `<div class="stepkey" aria-hidden="true"><span><i></i>Step</span><span><i class="b"></i>Decision</span><span><i class="d"></i>Creates or moves a record</span><span><i class="m"></i>Done by hand</span></div>`;
+    h += n.flows.map(flowHTML).join("");
+  }
+  if(n.links) h += `<div class="links"><span class="lab">Records and settings</span>${n.links.map(([l,u])=>`<span>${esc(l)}: <a href="${u}">${u}</a></span>`).join("")}</div>`;
+  if(n.next) h += `<div class="links"><span class="lab">Related boxes</span><div class="next">${n.next.map(k=>`<button type="button" data-go="${k}">${esc(N[k].title)}${N[k].map!==n.map?" ("+MAPS[N[k].map].title+")":""}</button>`).join("")}</div></div>`;
+  const panel = document.getElementById("panel");
+  panel.innerHTML = h; panel.scrollTop = 0;
+  panel.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>select(b.dataset.go,true)));
+  if(user && window.matchMedia("(max-width:900px)").matches){ panel.scrollIntoView({behavior:"smooth",block:"start"}); }
+}
+
+function switchMap(key,andSelect=true){
+  current = key;
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.map===key)));
+  drawMap(key);
+  try{ history.replaceState(null,"","#"+key); }catch(e){}
+  if(andSelect) select(selected[key]||MAPS[key].start,false);
+}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>switchMap(b.dataset.map)));
+
+/* workflow reference table */
+document.querySelector("#wftable tbody").innerHTML = Object.values(WF).map(w=>
+  `<tr><td>${esc(w.name)}</td><td>${esc(w.on)}</td><td>${esc(w.start)}</td><td><a href="${WFURL(w.id)}">${WFURL(w.id)}</a></td></tr>`).join("");
+
+const h0 = (location.hash||"").slice(1);
+switchMap(MAPS[h0]?h0:Object.keys(MAPS)[0]);
+</script>
+</body>
+</html>

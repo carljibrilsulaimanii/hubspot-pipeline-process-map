@@ -1,0 +1,13 @@
+{
+  "name": "hubspot-pipeline-process-map",
+  "version": "1.0.0",
+  "description": "A one-file clickable map of a HubSpot sales setup: objects, deal pipelines and the workflows behind every stage.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/check-map.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
