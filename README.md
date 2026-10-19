@@ -17,6 +17,7 @@ Built by [Jibril Sulaiman](https://github.com/carljibrilsulaimanii).
 
 - [Why it exists](#why-it-exists)
 - [What's in this repo](#whats-in-this-repo)
+- [Prerequisites and dependencies](#prerequisites-and-dependencies)
 - [Setup, step by step](#setup-step-by-step)
   - [Step 1. Open the example](#step-1-open-the-example)
   - [Step 2. Collect the facts from HubSpot](#step-2-collect-the-facts-from-hubspot)
@@ -51,6 +52,47 @@ Reading the workflows one at a time answers these questions, but the answers sta
 | [`process-map.html`](process-map.html) | The map. Styles, example data and the rendering code in one file |
 | [`tests/`](tests/) | The data checker that runs with `npm test` |
 | [`package.json`](package.json) | Holds the `npm test` command. No dependencies |
+
+## Prerequisites and dependencies
+
+You can build a map entirely by hand. The real one this template comes from was built with Claude Code reading HubSpot, which is much faster for a large portal. Both paths are listed.
+
+### To view and edit the map
+
+| What | Version or plan | Why | Check it's ready |
+|---|---|---|---|
+| A modern browser | Any current Chrome, Edge, Firefox or Safari | Opens [`process-map.html`](process-map.html) | Step 1 shows both example tabs |
+| A text editor | Any | You edit the `MAP DATA` block by hand | You can find `const PORTAL_ID` in the file |
+| Node.js | 18 or newer | Runs the data checker; no packages to install | `node --version` prints v18 or higher |
+| Git | Any | Only to clone the repo; downloading the file works too | `git --version` |
+
+### To collect the facts from HubSpot
+
+| What | Why | Check it's ready |
+|---|---|---|
+| A HubSpot user that can see deals, contacts and any custom objects on the map | Stage counts, amounts and record links | You can open the deals board for each pipeline |
+| Access to **Automation → Workflows**, at least to view | Triggers, branches and actions behind each stage | You can open a workflow and click into its actions |
+| A Professional or Enterprise hub | Workflows need Professional or higher; custom objects need Enterprise | The workflows tool opens |
+| Super admin, or access to **Settings → Objects** (wording may differ) | Pipelines, stage order and each stage's win probability | You can see the deal pipeline settings |
+
+### To build it with Claude Code (optional)
+
+| Dependency | What it was used for | What it can't do | Check it's ready |
+|---|---|---|---|
+| **Claude Code** (desktop app or CLI), on a Claude plan that includes it | Runs the whole build: reads HubSpot, writes the `MAP DATA` block, runs `npm test` | Nothing on its own: it needs the two below to see HubSpot | It opens in the folder holding [`process-map.html`](process-map.html) |
+| **HubSpot connector** for Claude, added to your Claude account and turned on for the session | Lists pipelines and stages with win probabilities; counts deals and amounts per stage; pulls property names and dropdown values; looks up owner names; samples records for links | Can't read workflow definitions (triggers, branches, custom code). Report-style counts allow at most two group-by fields | Ask Claude to list your deal pipelines and their stages. It should answer with your real stage names |
+| **Claude in Chrome** (the Chrome extension), in a Chrome profile already signed in to HubSpot | Reads each workflow's trigger, branches, actions and custom code, and its version and on/off state | Can't save or publish anything safely: tell it to read only. Signing in is up to you | With a HubSpot workflow open in that profile, ask Claude to read the workflow's name and trigger |
+| *Or, instead of Chrome:* a HubSpot private app or service key with the `automation` scope | Reads workflow definitions through HubSpot's Automation v4 API (beta) | Needs a token you create and store yourself; never paste it into the map | A read of one workflow id returns its actions |
+| *Optional:* a Slack connector, and meeting transcripts | The "How it was meant to work" notes: design decisions in threads and calls | Design notes describe the plan. Check them against the live workflows | Ask Claude to search Slack for one of your stage names |
+
+Two habits matter when Claude does the reading:
+
+- **Count with search, not reports.** For the exact number of records, use a record search (it returns a true total). Report-style counts are good for breakdowns but can differ by a few records.
+- **Read the live workflow before writing a claim.** Local notes and older copies drift from what is running.
+
+⚠️ **Keep tokens and secrets out of the map.** The map holds names, counts and links only. Workflow links open HubSpot, where the reader's own login applies.
+
+✅ **Check:** you can open a deal pipeline's settings and one workflow, and (if you're using Claude Code) the connector lists your pipelines.
 
 ## Setup, step by step
 
