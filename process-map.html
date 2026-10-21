@@ -182,7 +182,7 @@ table.wfl td{padding:7px 10px 7px 0;border-bottom:1px solid var(--line);vertical
     <button role="tab" id="tab-pipeline" aria-controls="stage" aria-selected="false" data-map="pipeline">Program pipeline flow</button>
     <button role="tab" id="tab-tickets" aria-controls="stage" aria-selected="false" data-map="tickets">Ticket sales flow</button>
     <button role="tab" id="tab-enroll" aria-controls="stage" aria-selected="false" data-map="enroll">Enrollment pipeline flow</button>
-    <button role="tab" id="tab-phone" aria-controls="stage" aria-selected="false" data-map="phone">Phone system connections</button>
+    <button role="tab" id="tab-phone" aria-controls="stage" aria-selected="false" data-map="phone">Agent Sales Attribution</button>
     <button role="tab" id="tab-agent" aria-controls="stage" aria-selected="false" data-map="agent">AI text agent</button>
     <button role="tab" id="tab-replies" aria-controls="stage" aria-selected="false" data-map="replies">Sales replies</button>
   </nav>
@@ -360,7 +360,7 @@ Object.assign(MAPS, {
   legend:[["lg-neutral","Trigger or workflow step"],["lg-enroll","Stage a workflow sets"],["lg-manual","Stage only a rep can set"]],
   edges:[["ebook","es1","M125 86 L125 138"],["efollow","es2","M340 86 L340 138"],["edep","es3","M555 86 L555 138"],["es1","eappt","M125 196 L125 248"],["es2","eappt","M340 196 L340 248"],["eappt","eoutc","M232 306 L232 348"],["eoutc","emanual","M232 406 L232 428 L330 428 L330 448"],["es3","emanual","M555 196 L555 478 L532 478"],
    ["emanual","ef1","M330 506 L330 524 L86 524 L86 546"],["emanual","ef2","M330 506 L330 524 L208 524 L208 546"],["emanual","ef3","M330 506 L330 546"],["emanual","ef4","M330 506 L330 524 L452 524 L452 546"],["emanual","ef5","M330 506 L330 524 L574 524 L574 546"]]},
- phone:{title:"Phone system connections",note:"Left: the phone system writes into HubSpot. Right: HubSpot drives the phone system.",h:530,start:"pattrib",
+ phone:{title:"Agent Sales Attribution",note:"Left: the phone system writes into HubSpot. Right: HubSpot drives the phone system.",h:530,start:"pattrib",
   legend:[["lg-alo","Phone system or its data"],["lg-neutral","HubSpot workflow"],["lg-ticket","Where it lands in ticket sales"],["lg-enroll","Where it lands in enrollment"]],
   edges:[["phub","psync","M290 86 L290 112 L175 112 L175 138"],["ptexts","phub","M505 138 L505 112 L390 112 L390 88"],["pdialer","phub","M650 268 L664 268 L664 58 L482 58"],
    ["psync","pstamp","M175 196 L175 238"],["pstamp","pattrib","M175 296 L175 338"],["pattrib","pstart","M175 396 L175 438"],["pagent","pbooked","M505 396 L505 438"]]},
@@ -389,7 +389,7 @@ add("tickets","tupgrade",360,210,280,"Upgrade","e.g. Basic to Premium","neutral"
 add("tickets","tself",40,310,130,"Self-serve","Round-robin","neutral",{kind:"Owner",
  q:"Who owns a self-serve sale?",a:["The next rep in the round-robin. The deal starts in Not Pitched so that rep calls to pitch an upgrade."],next:["tnotp"]});
 add("tickets","trep",200,310,130,"Rep sale","Owner: the rep","neutral",{kind:"Owner",
- q:"How does HubSpot know a rep made the sale?",a:["From logged rep activity: a long enough call or enough texts the rep typed before the purchase. See the phone system tab."],next:["tnotu","pattrib"]});
+ q:"How does HubSpot know a rep made the sale?",a:["From logged rep activity: a long enough call or enough texts the rep typed before the purchase. See the Agent Sales Attribution tab."],next:["tnotu","pattrib"]});
 add("tickets","thas",360,310,130,"Has a deal","Deal is moved","neutral",{kind:"Outcome",
  q:"What happens to the existing deal?",a:["If routing finds the buyer's deal, it moves it to Upgraded and updates the tier and amount."],next:["tupg"]});
 add("tickets","tnodeal",510,310,130,"No deal yet","New deal made","neutral",{kind:"Outcome",
@@ -431,7 +431,7 @@ add("enroll","ef3",274,548,112,"Green Zone","0 deals","manual",{kind:"Deal stage
 add("enroll","ef4",396,548,112,"Payment made","0 deals","manual",{kind:"Deal stage",q:"What is Payment made for?",a:["Buyers who have paid but not signed the agreement."],next:["ef5"]});
 add("enroll","ef5",518,548,112,"Won / Lost","2 won","manual",{kind:"Deal stage",q:"What happens on Won or Lost?",a:["Won makes the contact a customer and stamps the close date. Lost records a reason."],next:["emanual"]});
 
-/* Phone system connections */
+/* Agent Sales Attribution */
 add("phone","phub",200,30,280,"Phone and text system","Calls, texts, dialer","alo",{kind:"Outside HubSpot",
  q:"What does the phone system do here?",a:["Reps call and text from it. It logs every call and text into HubSpot, and HubSpot workflows send texts through it."],
  watch:"If it keys contacts by phone number and HubSpot by email, one person can be two HubSpot records and get every text twice.",next:["psync","ptexts","pdialer"]});
@@ -552,6 +552,7 @@ function flowHTML(f){
   if(f.wf){ const w = WF[f.wf];
     head = `<div class="wfh"><span class="lab">${esc(f.label||"Workflow")}</span><span class="nm">${esc(w.name)}</span>
       <span class="meta">Runs on ${esc(w.on)} · starts when ${esc(w.start.charAt(0).toLowerCase()+w.start.slice(1))}</span>
+      ${w.rev?`<span class="meta">${w.live===false?"<b>Turned off</b> · ":""}Revision ${w.rev} · last changed ${esc(w.upd)} · ${w.acts} actions</span>`:""}
       <a href="${WFURL(w.id)}">${WFURL(w.id)}</a></div>`;
   } else {
     head = `<div class="wfh"><span class="lab">${esc(f.label||"Process")}</span><span class="nm">${esc(f.name)}</span>${f.meta?`<span class="meta">${esc(f.meta)}</span>`:""}</div>`;
