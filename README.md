@@ -102,13 +102,23 @@ About 2 minutes.
 
 **1a.** Download [`process-map.html`](process-map.html) and open it in a browser (double-click it).
 
-**1b.** Click through the seven example tabs: **How the objects connect**, **Program pipeline flow**, **Agent Sales Attribution**, **Sales Flow**, **Enrollment pipeline flow**, **AI text agent** and **Sales replies**. Click a few boxes on each and check that the panel on the right changes each time.
+**1b.** Start on **How the tabs connect**. It follows a contact from first text to a deal, with one box per tab:
 
-The first two are a small starter example. The other five show the layouts of a full sales setup with made-up content: rep attribution from a phone and text system, the payment-driven Sales Flow that extends it, a call-driven pipeline, an AI text agent, and reply handling. Keep the tabs you need and delete the rest.
+| Tab | What it shows | Connects to |
+|---|---|---|
+| **Sales replies** | Every inbound text is flagged until a person answers; reps work replies from shared views | AI text agent (a rep takes over a bot conversation), Agent Sales Attribution (rep texts and calls count) |
+| **AI text agent** | A bot answers texts and books calls through a HubSpot workflow | Sales replies, Enrollment pipeline flow (each booking opens a deal) |
+| **Agent Sales Attribution** | Rep calls and texts decide whether a rep earned a sale | Sales replies, Sales Flow (owner and first stage) |
+| **Sales Flow** | A completed payment becomes a deal | Agent Sales Attribution, How the objects connect |
+| **Enrollment pipeline flow** | A booked call or a deposit becomes a deal, plus an Appointment | AI text agent, How the objects connect |
+| **How the objects connect** | The records every tab shares, with the contact as the hub | Every tab |
+| **Program pipeline flow (starter)** | A small pipeline to copy for your first map | Nothing; delete it once your own tabs are in place |
 
-**1c.** Click **Rep moves the stage** on the second tab. The panel shows a "How it was meant to work" note, a "Watch out" note and related-box buttons. Click **Won** under Related boxes: the map highlights that box and its arrows.
+The tabs run in that order, left to right. All the content is made up.
 
-✅ **Check:** every tab draws its boxes and arrows, and every box opens a panel.
+**1c.** On **How the tabs connect**, click **Agent Sales Attribution**. The panel explains how it links the tabs, and its **Related boxes** buttons jump to the tab itself. A button whose label ends in a tab name in brackets opens that tab. On **Sales Flow**, click **Payment succeeds**: the related boxes lead back to Agent Sales Attribution.
+
+✅ **Check:** every tab draws its boxes and arrows, every box opens a panel, and the Related boxes buttons move between tabs.
 
 ### Step 2. Collect the facts from HubSpot
 
@@ -158,9 +168,11 @@ Each tab is one map on a canvas 680 units wide. Boxes are 56 units tall. Sketch 
 
 **3b.** Put the trigger (what starts the flow) at the top, workflow steps in the middle and stages at the bottom. Keep one flow per column where you can.
 
-**3c.** Note the lowest box's `y`. The map's height `h` must be at least that `y` + 56, plus about 30 for the margin.
+**3c.** Make the first tab an overview: one box per tab, arrows for how a record moves from one tab to the next. Order the tabs in that same sequence, so the tab bar reads like the journey.
 
-**3d.** Keep box titles under about 35 characters on a 290-wide box, and subtitles shorter. Long text runs past the box edge.
+**3d.** Note the lowest box's `y`. The map's height `h` must be at least that `y` + 56, plus about 30 for the margin.
+
+**3e.** Keep box titles under about 35 characters on a 290-wide box, and subtitles shorter. Long text runs past the box edge.
 
 ✅ **Check:** no two boxes on the same map share space, and every box sits inside 0 to 680 across.
 
@@ -195,7 +207,7 @@ Add one entry to `MAPS` per tab. The key (for example `pipeline`) ties the boxes
 |---|---|
 | `title` | The heading over the map, and the tab's name |
 | `note` | One line next to the title, for example "Workflows create deals; a rep moves them after the call." |
-| `h` | Canvas height from Step 3c |
+| `h` | Canvas height from Step 3d |
 | `start` | The id of the box the tab opens on |
 | `legend` | Pairs of legend class and label, e.g. `["lg-manual","Stage only a rep can set"]` |
 | `edges` | The arrows (Step 7) |
@@ -234,7 +246,7 @@ The arguments are, in order: map key, box id, `x`, `y`, width, title, subtitle, 
 
 **6d.** Mark what is missing as well as what exists. A `["gap","No action for this stage"]` step draws in red, so a stage nothing moves deals into stands out.
 
-**6e.** Use `next` to link related boxes. They can be on other tabs; the button shows the other tab's name.
+**6e.** Use `next` to link related boxes. They can be on other tabs; the button shows the other tab's name. Wherever a record leaves one tab and enters another, link both ends: the box where it leaves points forward, and the box where it arrives points back. Every overview box links to its tab's first box.
 
 ⚠️ **Trap:** answers and step text are inserted as HTML, so a bare `<` in them breaks the panel. Write "less than" or `&lt;`. Titles, subtitles, stats and field tables are escaped for you.
 
@@ -301,7 +313,7 @@ It checks that:
 Success looks like:
 
 ```
-PASS 1066 checks: 7 maps, 68 boxes, 14 workflows
+PASS 1234 checks: 8 maps, 77 boxes, 14 workflows
 ```
 
 A failure lists each problem in plain words, for example `Box id "won" is used more than once; the earlier box disappears`.
@@ -401,7 +413,7 @@ These come from building and auditing a real map of this kind.
 | A tab shows the wrong map, or nothing | The button's `data-map` doesn't match a `MAPS` key | Match them (Step 5a) |
 | The panel stays blank after a click | A JavaScript error in the data, often a missing comma or quote | Open the browser console; it names the line |
 | Panel text is cut off or broken | A bare `<` in an answer or step | Write `&lt;` (Step 6) |
-| Box text runs past the edge | Title or subtitle too long for the box width | Shorten it or widen the box (Step 3d) |
+| Box text runs past the edge | Title or subtitle too long for the box width | Shorten it or widen the box (Step 3e) |
 | Workflow links open the wrong account | `PORTAL_ID` not set | Set it (Step 4a) |
 
 ## Limits

@@ -170,21 +170,22 @@ table.wfl td{padding:7px 10px 7px 0;border-bottom:1px solid var(--line);vertical
   <header>
     <div class="eyebrow">HubSpot portal 12345678 · example data</div>
     <h1>Pipeline process map</h1>
-    <p class="lede">Workflows create and move the deals in this example: a payment opens a deal, and so does a booked call. A phone and text system and an AI text agent feed both. Click any box to see what it does and the workflow steps behind it.</p>
+    <p class="lede">Follow a contact from first text to a deal: reps and an AI text agent answer texts, rep activity decides who earned a sale, payments become Sales Flow deals, and booked calls become Enrollment deals. Start with How the tabs connect, then click any box.</p>
     <div class="totals">
-      <div class="total e"><b>120 deals</b><span>Program pipeline (example)</span></div>
+      <div class="total t"><b>205 deals</b><span>Sales Flow and Enrollment (example)</span></div>
       <div class="total"><b>14 workflows</b><span>Create, move and text (example)</span></div>
     </div>
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Maps">
-    <button role="tab" id="tab-objects" aria-controls="stage" aria-selected="true" data-map="objects">How the objects connect</button>
-    <button role="tab" id="tab-pipeline" aria-controls="stage" aria-selected="false" data-map="pipeline">Program pipeline flow</button>
+    <button role="tab" id="tab-overview" aria-controls="stage" aria-selected="true" data-map="overview">How the tabs connect</button>
+    <button role="tab" id="tab-objects" aria-controls="stage" aria-selected="false" data-map="objects">How the objects connect</button>
+    <button role="tab" id="tab-replies" aria-controls="stage" aria-selected="false" data-map="replies">Sales replies</button>
+    <button role="tab" id="tab-agent" aria-controls="stage" aria-selected="false" data-map="agent">AI text agent</button>
     <button role="tab" id="tab-phone" aria-controls="stage" aria-selected="false" data-map="phone">Agent Sales Attribution</button>
     <button role="tab" id="tab-tickets" aria-controls="stage" aria-selected="false" data-map="tickets">Sales Flow</button>
     <button role="tab" id="tab-enroll" aria-controls="stage" aria-selected="false" data-map="enroll">Enrollment pipeline flow</button>
-    <button role="tab" id="tab-agent" aria-controls="stage" aria-selected="false" data-map="agent">AI text agent</button>
-    <button role="tab" id="tab-replies" aria-controls="stage" aria-selected="false" data-map="replies">Sales replies</button>
+    <button role="tab" id="tab-pipeline" aria-controls="stage" aria-selected="false" data-map="pipeline">Program pipeline flow (starter)</button>
   </nav>
 
   <div class="stage" id="stage" role="tabpanel">
@@ -236,10 +237,14 @@ const wfLink = k => `<a href="${WFURL(WF[k].id)}">${WFURL(WF[k].id)}</a>`;
 
 /* ---------- Maps: one per tab. Each also needs a <button data-map="key"> in the tabs nav. ---------- */
 const MAPS = {
- objects:{title:"How the objects connect",note:"Everything links through the contact.",h:330,start:"contact",
-  legend:[["lg-ticket","Records made from payments"],["lg-enroll","Records made from booked calls"],["lg-neutral","Source or shared record"]],
-  edges:[["pay","contact","M175 86 L175 112 L300 112 L300 138"],["meet","contact","M505 86 L505 112 L380 112 L380 138"],
-   ["contact","deal","M300 196 L300 222 L175 222 L175 248"],["contact","appt","M380 196 L380 222 L505 222 L505 248"]]},
+ overview:{title:"How the tabs connect",note:"Follow a contact from first text to a deal. Click a box to open that tab.",h:550,start:"oreply",
+  legend:[["lg-alo","Texts, calls and the phone system"],["lg-ticket","Payments"],["lg-enroll","Booked calls"],["lg-ghost","Reference and starter"]],
+  edges:[["oreply","oattr","M175 86 L175 138"],["oattr","osales","M175 196 L175 248"],["oagent","oenroll","M505 86 L505 248"],["oagent","oreply","M360 58 L322 58","dash"],
+   ["osales","oobjects","M175 306 L175 388 L198 388"],["oenroll","oobjects","M505 306 L505 388 L482 388"]]},
+ objects:{title:"How the objects connect",note:"The records every tab reads and writes.",h:330,start:"contact",
+  legend:[["lg-alo","Texts and calls"],["lg-ticket","Made from payments"],["lg-enroll","Made from booked calls"],["lg-neutral","Shared record"]],
+  edges:[["pay","contact","M125 86 L125 112 L300 112 L300 138"],["phonesys","contact","M340 86 L340 138"],["meet","contact","M555 86 L555 112 L380 112 L380 138"],
+   ["contact","dsales","M300 196 L300 222 L125 222 L125 248"],["contact","denroll","M340 196 L340 248"],["contact","appt","M380 196 L380 222 L555 222 L555 248"]]},
  pipeline:{title:"Program pipeline flow",note:"Workflows create deals; a rep moves them after the call.",h:430,start:"called",
   legend:[["lg-neutral","Trigger or workflow step"],["lg-enroll","Stage a workflow sets"],["lg-manual","Stage only a rep can set"]],
   edges:[["booked","s1","M175 86 L175 138"],["paid","s2","M505 86 L505 138"],["s1","called","M175 196 L175 238"],
@@ -252,41 +257,23 @@ const MAPS = {
 const N = {};
 const add = (map,id,x,y,w,title,sub,tone,o) => { N[id] = Object.assign({map,id,x,y,w,h:56,title,sub,tone},o); };
 
+/* How the tabs connect */
+add("overview","oreply",30,30,290,"Sales replies","Reps see and answer texts","alo",{"kind": "Tab", "q": "Where does a contact's text go?", "a": ["Every text lands on the contact and raises a needs-reply flag until a person answers. Reps work replies from shared views. The texts and calls they send are what Agent Sales Attribution counts."], "next": ["rin", "oagent", "oattr"]});
+add("overview","oagent",360,30,290,"AI text agent","Answers texts, books calls","alo",{"kind": "Tab", "q": "What does the AI text agent add?", "a": ["It answers texts on its own line and books calls through a HubSpot workflow. A booked call opens a deal in the Enrollment pipeline. When a rep takes a conversation over (the dashed arrow), the contact goes back to Sales replies."], "next": ["ain", "oreply", "oenroll"]});
+add("overview","oattr",30,140,290,"Agent Sales Attribution","Whose sale is it?","alo",{"kind": "Tab", "q": "How does attribution connect the tabs?", "a": ["It reads the calls and rep-typed texts from Sales replies and decides whether a rep earned the sale. Sales Flow uses that answer to choose the deal's owner and first stage."], "next": ["pattrib", "oreply", "osales"]});
+add("overview","osales",30,250,290,"Sales Flow","Payments become deals","ticket",{"kind": "Tab", "q": "What does Sales Flow cover?", "a": ["A completed payment becomes a deal. Routing picks the tier, then uses Agent Sales Attribution to decide between a rep sale and a self-serve sale, and between moving an existing deal or creating one."], "next": ["ttrigger", "oattr", "oobjects"]});
+add("overview","oenroll",360,250,290,"Enrollment pipeline flow","Booked calls become deals","enroll",{"kind": "Tab", "q": "What does the Enrollment pipeline cover?", "a": ["A booked call, from a rep's link or the AI text agent, creates or moves a deal and an Appointment record. A deposit can open a deal too. After the call, a rep moves the stage."], "next": ["ebook", "oagent", "oobjects"]});
+add("overview","oobjects",200,360,280,"How the objects connect","The records underneath","ghost",{"kind": "Tab", "q": "Which records do the tabs share?", "a": ["Payments, contacts, deals in both pipelines, and appointments. The contact is the hub every tab links through."], "next": ["contact", "osales", "oenroll"]});
+add("overview","ostarter",200,460,280,"Program pipeline flow","Starter example to copy","ghost",{"kind": "Tab", "q": "What is the Program pipeline flow tab?", "a": ["A small, simplified pipeline for building your first map. It doesn't connect to the other tabs. Copy it, or delete it once your own tabs are in place."], "next": ["booked"]});
+
 /* Objects map */
-add("objects","pay",30,30,290,"Payment","Your payment processor","neutral",{kind:"Source",
- q:"How does a payment reach the CRM?",
- a:["Each successful payment is copied into HubSpot as a payment record. A workflow on that record creates the deal, so no one types sales in by hand."],
- stats:[["~15%","Example: payment rows that never completed"]],
- watch:"Count only completed payments. Failed and abandoned attempts often sit in the same object with an amount filled in.",
- next:["contact","paid"]});
-
-add("objects","meet",360,30,290,"Meetings link","Round-robin booking page","neutral",{kind:"Source",
- q:"Which booking links feed the pipeline?",
- a:["Any booking made through the team's round-robin meetings link. The link's meeting type is what tells the workflow this is a sales call."],
- links:[["Example booking page","https://meetings.example.com/your-team/sales-call"]],
- next:["contact","booked"]});
-
-add("objects","contact",200,140,280,"Contact","Buyer or prospect","neutral",{kind:"Object",
- q:"What lives on the contact?",
- a:["The contact is the hub. Payments, appointments and deals all link to it, and the workflows keep a few summary fields on it."],
- links:[["View contacts",LIST("0-1")],["Edit contact properties",PROPS("0-1")]],
- fields:[["Lead status","New, In progress, Offer made, Won, Lost"],["Last call outcome","Scheduled, Completed, No show, Canceled"],["Sale source","Rep sale or self-serve, decides the deal owner"]],
- next:["deal","appt"]});
-
-add("objects","deal",30,250,290,"Deal: Program pipeline","Example: 120 deals","enroll",{kind:"Deal pipeline",
- q:"What is the program pipeline?",
- a:["One deal per buyer or booked prospect. The stages track the sales conversation, not the payment."],
- stats:[["40","Call booked"],["25","Call completed"],["30","Won"],["25","Lost"]],
- watch:"If HubSpot's win chance on a stage doesn't match reality, any weighted forecast is wrong. Check each stage's probability.",
- links:[["View deals (board; pick the pipeline in the pipeline menu)",BOARD],["Edit the pipeline and its stages",PIPE("0-3","1234567")],["Edit deal properties",PROPS("0-3")]],
- next:["s1","called"]});
-
-add("objects","appt",360,250,290,"Appointment","One record per booked call","enroll",{kind:"Object",
- q:"What does the appointment record track?",
- a:["The call itself: when it is, who hosts it, and whether it happened. Its own stages (Scheduled, Completed, No show, Canceled) are where call results show up."],
- flows:[{label:"Process",name:"Recording a call result",meta:"Done in the meeting record",steps:[["manual","Rep sets the meeting outcome"],["deal","The appointment moves to Completed, No show or Canceled"],["gap","The deal stage does not move by itself"]]}],
- links:[["View appointments",LIST("0-421")],["Edit the appointment pipeline",PIPE("0-421","7654321")],["Object settings",OBJSET("0-421")]],
- next:["called"]});
+add("objects","pay",30,30,190,"Payment","Payment processor record","ticket",{"kind": "Object", "q": "What does the payment record start?", "a": ["Each completed payment is copied into HubSpot as a payment record. A ticket payment starts Sales Flow; a deposit starts the Enrollment pipeline."], "stats": [["~15%", "Example: payment rows that never completed"]], "watch": "Count only completed payments. Failed and abandoned attempts often sit in the same object with an amount filled in.", "next": ["ttrigger", "edep", "contact"]});
+add("objects","phonesys",245,30,190,"Phone and text system","Calls and texts","alo",{"kind": "Source", "q": "What does the phone system write to the CRM?", "a": ["A call record for every call and the latest inbound and outbound text on the contact. Agent Sales Attribution and Sales replies both read these."], "next": ["psync", "rsync", "contact"]});
+add("objects","meet",460,30,190,"Meetings link","Round-robin booking page","enroll",{"kind": "Source", "q": "Which bookings open a deal?", "a": ["Any booking through the team's round-robin link, whether a rep sent it or the AI text agent booked it. The link's meeting type tells the workflow it's a sales call."], "links": [["Example booking page", "https://meetings.example.com/your-team/sales-call"]], "next": ["ebook", "abook", "contact"]});
+add("objects","contact",200,140,280,"Contact","Buyer or prospect","neutral",{"kind": "Object", "q": "What lives on the contact?", "a": ["The contact is the hub. Payments, calls, texts, appointments and both kinds of deal link to it, and the workflows keep summary fields on it."], "fields": [["Lead status", "New, In progress, Offer made, Won, Lost"], ["Sale source", "Rep sale or self-serve, from Agent Sales Attribution"], ["Needs reply", "Yes until a person answers their last text"]], "links": [["View contacts", LIST("0-1")], ["Edit contact properties", PROPS("0-1")]], "next": ["pattrib", "rnrviews", "dsales", "denroll"]});
+add("objects","dsales",30,250,190,"Deal: Sales Flow","Example: 160 deals","ticket",{"kind": "Deal pipeline", "q": "Where do Sales Flow deals come from?", "a": ["From payments. Each deal's owner and first stage come from Agent Sales Attribution."], "stats": [["120", "Not Pitched"], ["30", "Not Upgraded"], ["10", "Upgraded"]], "links": [["View deals (board; pick the pipeline in the pipeline menu)", BOARD], ["Edit the pipeline and its stages", PIPE("0-3","1234567")]], "next": ["ttrigger", "tnotp"]});
+add("objects","denroll",245,250,190,"Deal: Enrollment","Example: 45 deals","enroll",{"kind": "Deal pipeline", "q": "Where do Enrollment pipeline deals come from?", "a": ["From booked calls and deposits. The stages track the sales conversation, and a rep moves them after the call."], "watch": "If HubSpot's win chance on a stage doesn't match reality, any weighted forecast is wrong. Check each stage's probability.", "links": [["View deals (board; pick the pipeline in the pipeline menu)", BOARD], ["Edit the pipeline and its stages", PIPE("0-3","7654321")], ["Edit deal properties", PROPS("0-3")]], "next": ["ebook", "es1"]});
+add("objects","appt",460,250,190,"Appointment","One record per booked call","enroll",{"kind": "Object", "q": "What does the appointment record track?", "a": ["The call itself: when it is, who hosts it, and whether it happened. Its own stages (Scheduled, Completed, No show, Canceled) are where call results show up."], "flows": [{"label": "Process", "name": "Recording a call result", "meta": "Done in the meeting record", "steps": [["manual", "Rep sets the meeting outcome"], ["deal", "The appointment moves to Completed, No show or Canceled"], ["gap", "The deal stage does not move by itself"]]}], "links": [["View appointments", LIST("0-421")], ["Edit the appointment pipeline", PIPE("0-421","7654321")]], "next": ["eappt", "eoutc"]});
 
 /* Pipeline map */
 add("pipeline","booked",30,30,290,"Call booked","Meetings link","neutral",{kind:"Trigger",
@@ -294,7 +281,7 @@ add("pipeline","booked",30,30,290,"Call booked","Meetings link","neutral",{kind:
  a:["Booking the call starts a workflow. It moves the prospect's open deal to Call Booked, or creates one with a default amount, and sets the deal owner to the call's host."],
  flows:[{wf:"booking",steps:[["branch","Meeting type is a sales call?"],["branch","Open deal already exists?"],["deal","Yes: move it to Call Booked"],["deal","No: create it in Call Booked with the default amount"],["step","Set the owner to the call's host"]]}],
  intent:{t:"Every booked call should have exactly one open deal, owned by the rep taking the call.",src:"Example design meeting"},
- next:["s1"]});
+ next:["s1","ostarter"]});
 
 add("pipeline","paid",360,30,290,"Payment received","Paid in full online","neutral",{kind:"Trigger",
  q:"What happens when someone pays without a call?",
@@ -377,7 +364,7 @@ Object.assign(MAPS, {
 
 /* Sales Flow (extends Agent Sales Attribution) */
 add("tickets","ttrigger",220,30,240,"Payment succeeds","Lands on the payment record","neutral",{kind:"Trigger",
- q:"What starts the sales flow?",a:["A completed payment for a ticket. The routing workflow starts when the payment record gets its product name, so it knows what was bought.","Sales Flow extends Agent Sales Attribution. That tab decides whether a rep earned the sale, and this flow uses the answer to pick the deal's owner and first stage."],next:["trouter","pattrib","pstart"]});
+ q:"What starts the sales flow?",a:["A completed payment for a ticket. The routing workflow starts when the payment record gets its product name, so it knows what was bought.","Sales Flow extends Agent Sales Attribution. That tab decides whether a rep earned the sale, and this flow uses the answer to pick the deal's owner and first stage."],next:["trouter","pattrib","pstart","osales","pay"]});
 add("tickets","trouter",220,120,240,"Payment Routing","Finds or creates the contact","neutral",{kind:"Workflow",
  q:"What does routing do before it makes a deal?",a:["It links the payment to a contact (creating one from the receipt email if needed), tags the product, works out the tier and the owner, and checks for an existing deal."],
  flows:[{wf:"routing",steps:[["step","Link or create the contact"],["branch","New ticket or upgrade?"],["branch","Rep sale or self-serve?"],["branch","Deal already exists?"],["deal","Move that deal, or create one"]]}],next:["tnew","tupgrade"]});
@@ -397,34 +384,34 @@ add("tickets","tnodeal",510,310,130,"No deal yet","New deal made","neutral",{kin
  watch:"Count buyers, not deals, when you report upgrades.",next:["tupg"]});
 add("tickets","tnotp",40,420,130,"Not Pitched","300 deals","ticket",{kind:"Deal stage",
  q:"What happens in Not Pitched?",a:["Nothing automatic. The rep calls, pitches, and moves the deal by hand."],stats:[["300","Deals"],["10%","Win chance in settings"]],
- watch:"These deals are already paid. A low win chance makes the weighted forecast undervalue them.",next:["tnotu"]});
+ watch:"These deals are already paid. A low win chance makes the weighted forecast undervalue them.",next:["tnotu","dsales"]});
 add("tickets","tnotu",200,420,130,"Not Upgraded","120 deals","ticket",{kind:"Deal stage",
  q:"What is in Not Upgraded?",a:["Rep sales, which land here straight away, and self-serve deals a rep has pitched and moved here."],next:["tupg"]});
-add("tickets","tupg",360,420,280,"Upgraded","40 deals","ticket",{kind:"Deal stage",q:"What is in Upgraded?",a:["Deals whose buyer paid for an upgrade."],next:["tnodeal"]});
+add("tickets","tupg",360,420,280,"Upgraded","40 deals","ticket",{kind:"Deal stage",q:"What is in Upgraded?",a:["Deals whose buyer paid for an upgrade."],next:["tnodeal","dsales"]});
 
 /* Enrollment pipeline flow */
 add("enroll","ebook",30,30,190,"Enrollment call booked","Meetings link or AI agent","neutral",{kind:"Trigger",
  q:"How does a booked call create a deal?",a:["Booking starts a workflow that sets the owner to the call's host, moves or creates the deal with a placeholder amount, and creates an Appointment record."],
- flows:[{wf:"meetsync",steps:[["branch","Meeting type is an enrollment call?"],["branch","Deal exists?"],["deal","Move it to Enrollment Call Booked, or create it"],["deal","Create the Appointment record"]]}],next:["es1","eappt"]});
+ flows:[{wf:"meetsync",steps:[["branch","Meeting type is an enrollment call?"],["branch","Deal exists?"],["deal","Move it to Enrollment Call Booked, or create it"],["deal","Create the Appointment record"]]}],next:["es1","eappt","abook","meet","oenroll"]});
 add("enroll","efollow",245,30,190,"Follow-up call booked","Meetings link","neutral",{kind:"Trigger",
  q:"What does a follow-up booking do?",a:["The same workflow, follow-up path: it moves the deal to Follow Up Call Booked and creates an Appointment."],next:["es2"]});
 add("enroll","edep",460,30,190,"Deposit paid","Deposit checkout","neutral",{kind:"Trigger",
  q:"How does a deposit create a deal?",a:["A deposit workflow creates the deal in Deposit Paid, unless a call is already booked."],
  flows:[{wf:"deposit",steps:[["branch","Call already booked?"],["deal","Yes: Enrollment Call Booked"],["deal","No: Deposit Paid"]]}],
- watch:"Check that only one workflow creates deposit deals. Two that both fire make duplicates.",next:["es3"]});
+ watch:"Check that only one workflow creates deposit deals. Two that both fire make duplicates.",next:["es3","pay","ttrigger"]});
 add("enroll","es1",30,140,190,"Enrollment Call Booked","30, placeholder amount","enroll",{kind:"Deal stage",
  q:"What happens when a deal enters Enrollment Call Booked?",a:["The stage workflow stamps the call date and the lead status. Then the deal waits for the rep."],
  flows:[{wf:"enrollstage",label:"On entering this stage",steps:[["step","Copy the call time"],["step","Set lead status"]]}],next:["eappt"]});
 add("enroll","es2",245,140,190,"Follow Up Call Booked","8 deals","enroll",{kind:"Deal stage",q:"What happens in Follow Up Call Booked?",a:["The follow-up call is recorded; the earlier enrollment call is marked completed."],next:["eappt"]});
 add("enroll","es3",460,140,190,"Deposit Paid","5 deals","enroll",{kind:"Deal stage",q:"What is in Deposit Paid?",a:["Buyers who paid a deposit and haven't booked a call. They are the first people reps should call."],next:["emanual"]});
 add("enroll","eappt",30,250,405,"Appointment record created","Scheduled, then Completed or No Show","neutral",{kind:"Object",
- q:"What does the Appointment record do?",a:["It is the call's own record. When the outcome is set, its stage moves to Completed, No Show, Canceled or Rescheduled."],stats:[["25","Completed"],["6","No show"]],next:["eoutc"]});
+ q:"What does the Appointment record do?",a:["It is the call's own record. When the outcome is set, its stage moves to Completed, No Show, Canceled or Rescheduled."],stats:[["25","Completed"],["6","No show"]],next:["eoutc","appt"]});
 add("enroll","eoutc",30,350,405,"Call outcome logged","Writes outcome fields, not the stage","neutral",{kind:"Workflow",
  q:"Where does the call outcome go?",a:["A workflow copies it onto the deal's outcome fields. Nothing changes the deal stage."],
  flows:[{wf:"outcome",steps:[["branch","Sales meeting with an outcome"],["step","Copy the outcome to the deal"],["gap","Deal stage is not changed"]]}],next:["emanual"]});
 add("enroll","emanual",130,450,400,"Rep moves the stage by hand","Then workflows stamp lifecycle and lead status","manual",{kind:"Manual step",
  q:"Who moves a deal after the call?",a:["The rep. If reps work in another tool and skip this, deals stay in the booked stages."],
- intent:{t:"Moving the stage was meant to be how the closer records the call result.",src:"Example design meeting"},next:["ef1","ef3","ef5"]});
+ intent:{t:"Moving the stage was meant to be how the closer records the call result.",src:"Example design meeting"},next:["ef1","ef3","ef5","denroll"]});
 add("enroll","ef1",30,548,112,"No show","0 deals","manual",{kind:"Deal stage",q:"Why are there no deals in No show?",a:["Nothing moves deals here automatically. The no-show is on the Appointment instead."],next:["eoutc"]});
 add("enroll","ef2",152,548,112,"Nurture","0 deals","manual",{kind:"Deal stage",q:"What is Nurture for?",a:["Prospects who had the call and need more time, with a next-touch date and a reason."],next:["emanual"]});
 add("enroll","ef3",274,548,112,"Green Zone","0 deals","manual",{kind:"Deal stage",q:"What does Green Zone mean?",a:["Verbally committed, or funding approved: the highest-priority deals."],next:["emanual"]});
@@ -434,10 +421,10 @@ add("enroll","ef5",518,548,112,"Won / Lost","2 won","manual",{kind:"Deal stage",
 /* Agent Sales Attribution */
 add("phone","phub",200,30,280,"Phone and text system","Calls, texts, dialer","alo",{kind:"Outside HubSpot",
  q:"What does the phone system do here?",a:["Reps call and text from it. It logs every call and text into HubSpot, and HubSpot workflows send texts through it."],
- watch:"If it keys contacts by phone number and HubSpot by email, one person can be two HubSpot records and get every text twice.",next:["psync","ptexts","pdialer"]});
+ watch:"If it keys contacts by phone number and HubSpot by email, one person can be two HubSpot records and get every text twice.",next:["psync","ptexts","pdialer","oattr","rin"]});
 add("phone","psync",30,140,290,"Calls and texts sync","Writes into HubSpot","alo",{kind:"Sync",
  q:"What does the phone system write into HubSpot?",a:["A call record for every call, the last inbound and outbound text on the contact, and often the contact owner."],
- watch:"If it pushes its own owner into HubSpot, owner changes made only in HubSpot get overwritten.",next:["pstamp"]});
+ watch:"If it pushes its own owner into HubSpot, owner changes made only in HubSpot get overwritten.",next:["pstamp","rsync","contact"]});
 add("phone","pstamp",30,240,290,"Rep Activity - Stamp Contact","Credits a rep's real call","neutral",{kind:"Workflow",
  q:"How does a rep's call get credited?",a:["A long enough outbound call stamps the rep on the contact. The first rep to work a lead is kept."],next:["pattrib"]});
 add("phone","pattrib",30,340,290,"Rep Attribution - Calculate Winner","Decides rep sale or self-serve","neutral",{kind:"Workflow",
@@ -448,19 +435,19 @@ add("phone","pstart",30,440,290,"Continues in Sales Flow","Deal owner and starti
 add("phone","ptexts",360,140,290,"Texts sent by workflows","Through the phone system","alo",{kind:"HubSpot to phone system",
  q:"Which workflows text through the phone system?",a:["Any workflow with a send-text step: class invites, abandoned carts, upgrade pushes, confirmations."],
  flows:[{wf:"textsend",label:"Example",steps:[["branch","Already paid? Exit"],["wait","Wait 15 minutes"],["branch","Quiet hours? Hold until morning"],["deal","Text by product"]]}],
- watch:"Hold texts to daytime in the contact's own time zone, and check that time zone is right.",next:["pdialer"]});
+ watch:"Hold texts to daytime in the contact's own time zone, and check that time zone is right.",next:["pdialer","rin"]});
 add("phone","pdialer",360,240,290,"Power dialer lists","HubSpot lists into the dialer","alo",{kind:"HubSpot to phone system",
  q:"How do reps get their call lists?",a:["HubSpot lists, synced into the dialer, built on lead status: abandoned carts, deposits with no call, new leads."],
  watch:"Check list syncing often. A list that stops updating keeps reps calling yesterday's leads.",next:["phub"]});
 add("phone","pagent",360,340,290,"AI text agent","Answers and books calls","alo",{kind:"AI agent",
- q:"Where does the AI agent fit?",a:["It answers texts and books calls through a HubSpot workflow. See the AI text agent tab."],next:["agate","pbooked"]});
+ q:"Where does the AI agent fit?",a:["It answers texts and books calls through a HubSpot workflow. See the AI text agent tab."],next:["agate","pbooked","ain"]});
 add("phone","pbooked",360,440,290,"Booked call becomes a deal","The booking workflow takes over","enroll",{kind:"Where it lands",
  q:"What happens after a call is booked?",a:["The booked meeting starts the booking workflow, which creates or moves the enrollment deal and the Appointment."],next:["ebook"]});
 
 /* AI text agent */
 add("agent","ain",200,30,280,"A contact texts in","On a line the agent answers","neutral",{kind:"Trigger",
  q:"Which numbers does the agent answer?",a:["Any line whose incoming texts are routed to the agent. Calls on the same line can still go to people."],
- watch:"Don't put the agent on a line reps also text from. It will answer inside their conversations.",next:["agate"]});
+ watch:"Don't put the agent on a line reps also text from. It will answer inside their conversations.",next:["agate","rin","oagent"]});
 add("agent","agate",200,120,280,"Will the agent answer?","Schedule, queue, stop button","alo",{kind:"Agent setting",
  q:"What decides whether the agent answers?",a:["The line routing, the agent's schedule, and whether a rep has stopped it for that contact."],
  flows:[{label:"Process",name:"Checks before the agent replies",meta:"Inside the phone system",steps:[["branch","Line routes texts to the agent?"],["branch","Stopped for this contact?"],["branch","Schedule open?"],["wait","Closed: the text may be queued until it opens"],["gap","No check for \"a rep is already talking\""]]}],next:["areply"]});
@@ -471,7 +458,7 @@ add("agent","aanswers",30,320,290,"Answers questions","From knowledge files","al
 add("agent","atimes",360,320,290,"Offers open times","Reads a HubSpot record","alo",{kind:"Phone system to HubSpot",
  q:"How does the agent know which times are open?",a:["A daily HubSpot workflow writes the next open times to one record. The agent reads that record and offers a few."],next:["arelay"]});
 add("agent","atakeover",30,420,290,"Rep takes over","Stop button per contact","manual",{kind:"Done by hand",
- q:"How does a rep stop the agent?",a:["With the stop control on the contact in the phone system. An instruction telling the agent to go quiet is not reliable."],next:["agate"]});
+ q:"How does a rep stop the agent?",a:["With the stop control on the contact in the phone system. An instruction telling the agent to go quiet is not reliable."],next:["agate","rrep"]});
 add("agent","arelay",360,420,290,"Booking relay","Agent request into a HubSpot form","neutral",{kind:"Workflow",
  q:"How does a booking request reach HubSpot?",a:["The agent posts the details to a webhook workflow, which submits a HubSpot form. The form creates or updates the contact and starts the booking workflow."],
  flows:[{wf:"relay",steps:[["step","Receive name, email, phone, preferred day"],["deal","Submit the booking form"]]}],next:["abook"]});
@@ -479,18 +466,18 @@ add("agent","astatus",30,520,290,"Where the agent stands","Live on the test line
  q:"What is the agent's status?",a:["Keep a short dated history here: when it went live, what changed, and why."],fields:[["Week 1","Built and tested on a test line"],["Week 2","Live; moved off the shared line after answering inside rep chats"]],next:["ain"]});
 add("agent","abook",360,520,290,"AI Agent - Book Call","Checks, books, texts back","neutral",{kind:"Workflow",
  q:"What does the booking workflow do?",a:["It checks whether a rep already owns the conversation, books through the meetings API if not, and texts the result."],
- flows:[{wf:"aibook",steps:[["branch","Rep already working this contact?"],["deal","No: book the call"],["deal","Text the confirmation"],["branch","Booked or not?"]]}],next:["abooked","ahandoff"]});
+ flows:[{wf:"aibook",steps:[["branch","Rep already working this contact?"],["deal","No: book the call"],["deal","Text the confirmation"],["branch","Booked or not?"]]}],next:["abooked","ahandoff","ebook"]});
 add("agent","ahandoff",30,620,290,"Not booked: task for a rep","Rep books by hand","manual",{kind:"Outcome",
  q:"What happens when it can't book?",a:["The contact owner gets a task to call and book by hand."],next:["abook"]});
 add("agent","abooked",360,620,290,"Booked: meeting and deal","Booking workflow takes over","enroll",{kind:"Where it lands",
- q:"What happens after it books?",a:["The meeting starts the booked-call workflow, which creates the enrollment deal and the Appointment."],next:["ebook"]});
+ q:"What happens after it books?",a:["The meeting starts the booked-call workflow, which creates the enrollment deal and the Appointment."],next:["ebook","es1"]});
 
 /* Sales replies */
 add("replies","rin",200,30,280,"A contact texts in","Any line","neutral",{kind:"Trigger",
- q:"Which replies does this cover?",a:["Every text a contact sends: replies to marketing blasts and replies to reps."],stats:[["400","Contacts waiting on a reply"]],next:["rsync"]});
+ q:"Which replies does this cover?",a:["Every text a contact sends: replies to marketing blasts and replies to reps."],stats:[["400","Contacts waiting on a reply"]],next:["rsync","ain","oreply"]});
 add("replies","rsync",200,120,280,"Phone system logs it","Contact fields and the inbox","alo",{kind:"Sync",
  q:"How does a text reach HubSpot?",a:["The phone system writes the last inbound text and its date onto the contact, and may open an inbox conversation."],
- watch:"If a sync can write an old text date, only trigger on dates that are today.",next:["rcta","ron"]});
+ watch:"If a sync can write an old text date, only trigger on dates that are today.",next:["rcta","ron","psync"]});
 add("replies","rcta",30,230,290,"Tag blast reply","Marketing line only","neutral",{kind:"Workflow",
  q:"How is a blast reply tagged?",a:["A reply on the marketing line is stamped with when, and which blast it answered, unless it is an opt-out."],next:["rrotate"]});
 add("replies","ron",360,230,290,"Texts - Needs Reply ON","Any line, today only","neutral",{kind:"Workflow",
@@ -499,7 +486,7 @@ add("replies","ron",360,230,290,"Texts - Needs Reply ON","Any line, today only",
 add("replies","rrotate",30,330,290,"Unowned repliers get a rep","Rotation across the team","neutral",{kind:"Owner",
  q:"Who gets a reply from someone with no owner?",a:["The next rep in a rotation. It never replaces an existing owner."],next:["rviews"]});
 add("replies","rrep",360,330,290,"Rep answers","Types a text or calls","manual",{kind:"Done by hand",
- q:"What counts as answering?",a:["A text a rep typed, or a call after the contact's last text. Automated texts don't count."],next:["roff"]});
+ q:"What counts as answering?",a:["A text a rep typed, or a call after the contact's last text. Automated texts don't count."],next:["roff","pstamp","pattrib"]});
 add("replies","rviews",30,430,290,"Blast reply views","Mine, all, unowned","ticket",{kind:"What reps look at",
  q:"Where do reps see blast replies?",a:["Shared contact views of everyone who replied to a blast in the last few days."],next:["rinbox"]});
 add("replies","roff",360,430,290,"Texts - Needs Reply OFF","Clears only for a person","neutral",{kind:"Workflow",
@@ -510,7 +497,7 @@ add("replies","rinbox",30,530,290,"Shared inbox","One conversation per reply","a
 add("replies","rnrviews",360,530,290,"Needs-reply views","My texts: needs reply","ticket",{kind:"What reps look at",
  q:"Where does a rep see who is waiting?",a:["\"My texts - needs reply\": their own contacts flagged Yes, oldest first."],next:["rgaps"]});
 add("replies","rgaps",30,630,620,"What the views miss","Flagged contacts with no owner","ghost",{kind:"Gaps",
- q:"What falls through the cracks?",a:["A view filtered to \"Owner is me\" never shows contacts with no owner. Add an \"Unowned - needs reply\" view for the sales lead."],next:["rnrviews"]});
+ q:"What falls through the cracks?",a:["A view filtered to \"Owner is me\" never shows contacts with no owner. Add an \"Unowned - needs reply\" view for the sales lead."],next:["rnrviews","contact"]});
 
 /* MAP DATA END */
 
