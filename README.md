@@ -102,7 +102,7 @@ About 2 minutes.
 
 **1a.** Download [`process-map.html`](process-map.html) and open it in a browser (double-click it).
 
-**1b.** Click through the seven example tabs: **How the objects connect**, **Program pipeline flow**, **Ticket sales flow**, **Enrollment pipeline flow**, **Phone system connections**, **AI text agent** and **Sales replies**. Click a few boxes on each and check that the panel on the right changes each time.
+**1b.** Click through the seven example tabs: **How the objects connect**, **Program pipeline flow**, **Ticket sales flow**, **Deal pipeline flow**, **Phone system connections**, **AI text agent** and **Sales replies**. Click a few boxes on each and check that the panel on the right changes each time.
 
 The first two are a small starter example. The other five show the layouts of a full sales setup (a payment-driven pipeline, a call-driven pipeline, a phone and text system, an AI text agent, and reply handling) with made-up content. Keep the tabs you need and delete the rest.
 
