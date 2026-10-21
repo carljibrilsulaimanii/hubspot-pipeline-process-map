@@ -180,9 +180,9 @@ table.wfl td{padding:7px 10px 7px 0;border-bottom:1px solid var(--line);vertical
   <nav class="tabs" role="tablist" aria-label="Maps">
     <button role="tab" id="tab-objects" aria-controls="stage" aria-selected="true" data-map="objects">How the objects connect</button>
     <button role="tab" id="tab-pipeline" aria-controls="stage" aria-selected="false" data-map="pipeline">Program pipeline flow</button>
-    <button role="tab" id="tab-tickets" aria-controls="stage" aria-selected="false" data-map="tickets">Ticket sales flow</button>
-    <button role="tab" id="tab-enroll" aria-controls="stage" aria-selected="false" data-map="enroll">Enrollment pipeline flow</button>
     <button role="tab" id="tab-phone" aria-controls="stage" aria-selected="false" data-map="phone">Agent Sales Attribution</button>
+    <button role="tab" id="tab-tickets" aria-controls="stage" aria-selected="false" data-map="tickets">Sales Flow</button>
+    <button role="tab" id="tab-enroll" aria-controls="stage" aria-selected="false" data-map="enroll">Enrollment pipeline flow</button>
     <button role="tab" id="tab-agent" aria-controls="stage" aria-selected="false" data-map="agent">AI text agent</button>
     <button role="tab" id="tab-replies" aria-controls="stage" aria-selected="false" data-map="replies">Sales replies</button>
   </nav>
@@ -351,7 +351,7 @@ Object.assign(WF, {
 });
 
 Object.assign(MAPS, {
- tickets:{title:"Ticket sales flow",note:"One workflow makes every decision shown here.",h:500,start:"trouter",
+ tickets:{title:"Sales Flow",note:"Extends Agent Sales Attribution: its result sets each deal's owner and starting stage.",h:500,start:"trouter",
   legend:[["lg-neutral","Workflow step or decision"],["lg-ticket","Deal stage"],["lg-manual","Rep moves the deal by hand"]],
   edges:[["ttrigger","trouter","M340 86 L340 118"],["trouter","tnew","M300 176 L300 193 L180 193 L180 208"],["trouter","tupgrade","M380 176 L380 193 L500 193 L500 208"],
    ["tnew","tself","M140 266 L140 288 L105 288 L105 308"],["tnew","trep","M220 266 L220 288 L265 288 L265 308"],["tupgrade","thas","M460 266 L460 288 L425 288 L425 308"],["tupgrade","tnodeal","M540 266 L540 288 L575 288 L575 308"],
@@ -361,7 +361,7 @@ Object.assign(MAPS, {
   edges:[["ebook","es1","M125 86 L125 138"],["efollow","es2","M340 86 L340 138"],["edep","es3","M555 86 L555 138"],["es1","eappt","M125 196 L125 248"],["es2","eappt","M340 196 L340 248"],["eappt","eoutc","M232 306 L232 348"],["eoutc","emanual","M232 406 L232 428 L330 428 L330 448"],["es3","emanual","M555 196 L555 478 L532 478"],
    ["emanual","ef1","M330 506 L330 524 L86 524 L86 546"],["emanual","ef2","M330 506 L330 524 L208 524 L208 546"],["emanual","ef3","M330 506 L330 546"],["emanual","ef4","M330 506 L330 524 L452 524 L452 546"],["emanual","ef5","M330 506 L330 524 L574 524 L574 546"]]},
  phone:{title:"Agent Sales Attribution",note:"Left: the phone system writes into HubSpot. Right: HubSpot drives the phone system.",h:530,start:"pattrib",
-  legend:[["lg-alo","Phone system or its data"],["lg-neutral","HubSpot workflow"],["lg-ticket","Where it lands in ticket sales"],["lg-enroll","Where it lands in enrollment"]],
+  legend:[["lg-alo","Phone system or its data"],["lg-neutral","HubSpot workflow"],["lg-ticket","Where it continues in Sales Flow"],["lg-enroll","Where it lands in enrollment"]],
   edges:[["phub","psync","M290 86 L290 112 L175 112 L175 138"],["ptexts","phub","M505 138 L505 112 L390 112 L390 88"],["pdialer","phub","M650 268 L664 268 L664 58 L482 58"],
    ["psync","pstamp","M175 196 L175 238"],["pstamp","pattrib","M175 296 L175 338"],["pattrib","pstart","M175 396 L175 438"],["pagent","pbooked","M505 396 L505 438"]]},
  agent:{title:"AI text agent",note:"The phone system's AI agent and the HubSpot workflows that book for it.",h:700,start:"agate",
@@ -375,9 +375,9 @@ Object.assign(MAPS, {
    ["ron","rrep","M505 286 L505 328"],["rrep","roff","M505 386 L505 428"],["roff","rnrviews","M505 486 L505 528"]]}
 });
 
-/* Ticket sales flow */
+/* Sales Flow (extends Agent Sales Attribution) */
 add("tickets","ttrigger",220,30,240,"Payment succeeds","Lands on the payment record","neutral",{kind:"Trigger",
- q:"What starts the ticket flow?",a:["A completed payment for a ticket. The routing workflow starts when the payment record gets its product name, so it knows what was bought."],next:["trouter"]});
+ q:"What starts the sales flow?",a:["A completed payment for a ticket. The routing workflow starts when the payment record gets its product name, so it knows what was bought.","Sales Flow extends Agent Sales Attribution. That tab decides whether a rep earned the sale, and this flow uses the answer to pick the deal's owner and first stage."],next:["trouter","pattrib","pstart"]});
 add("tickets","trouter",220,120,240,"Payment Routing","Finds or creates the contact","neutral",{kind:"Workflow",
  q:"What does routing do before it makes a deal?",a:["It links the payment to a contact (creating one from the receipt email if needed), tags the product, works out the tier and the owner, and checks for an existing deal."],
  flows:[{wf:"routing",steps:[["step","Link or create the contact"],["branch","New ticket or upgrade?"],["branch","Rep sale or self-serve?"],["branch","Deal already exists?"],["deal","Move that deal, or create one"]]}],next:["tnew","tupgrade"]});
@@ -443,8 +443,8 @@ add("phone","pstamp",30,240,290,"Rep Activity - Stamp Contact","Credits a rep's 
 add("phone","pattrib",30,340,290,"Rep Attribution - Calculate Winner","Decides rep sale or self-serve","neutral",{kind:"Workflow",
  q:"How is a rep sale decided?",a:["A code step reads every call and every rep-typed text on the contact and picks a winner, then writes it where payment routing reads it."],
  flows:[{wf:"attrib",steps:[["step","Count each rep's calls and rep-typed texts"],["branch","Apply the winner rules"],["deal","Write the winner and the reason"]]}],next:["pstart","trep"]});
-add("phone","pstart",30,440,290,"Ticket deal's starting stage","Rep sale or self-serve","ticket",{kind:"Where it lands",
- q:"How does phone activity change where a deal starts?",a:["A rep sale starts in Not Upgraded, owned by that rep. Anything else starts in Not Pitched with a round-robin owner."],next:["trep","tself"]});
+add("phone","pstart",30,440,290,"Continues in Sales Flow","Deal owner and starting stage","ticket",{kind:"Where it lands",
+ q:"How does phone activity change where a deal starts?",a:["A rep sale starts in Not Upgraded, owned by that rep. Anything else starts in Not Pitched with a round-robin owner. Sales Flow picks up from here."],next:["ttrigger","trep","tself"]});
 add("phone","ptexts",360,140,290,"Texts sent by workflows","Through the phone system","alo",{kind:"HubSpot to phone system",
  q:"Which workflows text through the phone system?",a:["Any workflow with a send-text step: class invites, abandoned carts, upgrade pushes, confirmations."],
  flows:[{wf:"textsend",label:"Example",steps:[["branch","Already paid? Exit"],["wait","Wait 15 minutes"],["branch","Quiet hours? Hold until morning"],["deal","Text by product"]]}],

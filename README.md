@@ -102,9 +102,9 @@ About 2 minutes.
 
 **1a.** Download [`process-map.html`](process-map.html) and open it in a browser (double-click it).
 
-**1b.** Click through the seven example tabs: **How the objects connect**, **Program pipeline flow**, **Ticket sales flow**, **Enrollment pipeline flow**, **Agent Sales Attribution**, **AI text agent** and **Sales replies**. Click a few boxes on each and check that the panel on the right changes each time.
+**1b.** Click through the seven example tabs: **How the objects connect**, **Program pipeline flow**, **Agent Sales Attribution**, **Sales Flow**, **Enrollment pipeline flow**, **AI text agent** and **Sales replies**. Click a few boxes on each and check that the panel on the right changes each time.
 
-The first two are a small starter example. The other five show the layouts of a full sales setup (a payment-driven pipeline, a call-driven pipeline, a phone and text system, an AI text agent, and reply handling) with made-up content. Keep the tabs you need and delete the rest.
+The first two are a small starter example. The other five show the layouts of a full sales setup with made-up content: rep attribution from a phone and text system, the payment-driven Sales Flow that extends it, a call-driven pipeline, an AI text agent, and reply handling. Keep the tabs you need and delete the rest.
 
 **1c.** Click **Rep moves the stage** on the second tab. The panel shows a "How it was meant to work" note, a "Watch out" note and related-box buttons. Click **Won** under Related boxes: the map highlights that box and its arrows.
 
